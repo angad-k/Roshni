@@ -2,8 +2,6 @@
 use image::png::PNGEncoder;
 use image::ColorType;
 use std::fs::File;
-use std::io::BufWriter;
-use std::path::Path;
 
 pub fn write_image(path: &str, width: u32, height: u32, data: &[u8]) {
     let output = File::create(path).unwrap();
