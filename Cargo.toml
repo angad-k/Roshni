@@ -9,3 +9,4 @@ edition = "2021"
 image = "0.13.0"
 cast = { version = "*", default-features = false }
 rand = "0.8.4"
+pbr = "1.0.4"

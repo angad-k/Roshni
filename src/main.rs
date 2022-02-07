@@ -7,6 +7,7 @@ pub mod sphere;
 pub mod vector3;
 use crate::hittable::Hittable;
 use cast::u32;
+use pbr::ProgressBar;
 use rand::Rng;
 pub fn ray_color(r: &ray::Ray, world: Vec<sphere::Sphere>) -> vector3::Color {
     if let Some(hit) = world.clone().hit(r, 0.0, 10000000000.0) {
@@ -42,13 +43,16 @@ fn main() {
 
     let cam = camera::Camera::new();
 
-    // Render
+    // Progress bar
+    let mut pb = ProgressBar::new((image_width * image_height) as u64);
+    pb.format("╢▌▌░╟");
 
+    // Render
     let mut img: image::RgbImage = image::ImageBuffer::new(image_width, image_height);
     for j in 0..image_height {
         for i in 0..image_width {
             let mut pixel_color = vector3::Color::new(0.0, 0.0, 0.0);
-            for s in 0..samples_per_pixel {
+            for _s in 0..samples_per_pixel {
                 let u = (i as f64 + rng.gen_range(0.0..1.0)) / (image_width - 1) as f64;
                 let v = (j as f64 + rng.gen_range(0.0..1.0)) / (image_height - 1) as f64;
                 //println!("{} {} ", u, v);
@@ -61,7 +65,9 @@ fn main() {
                 image_height - j - 1,
                 pixel_color.get_color(samples_per_pixel),
             );
+            pb.inc();
         }
     }
     img.save("image.png").unwrap();
+    pb.finish_print("Image Rendered :)");
 }
