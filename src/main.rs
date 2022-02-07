@@ -27,6 +27,9 @@ pub fn ray_color(r: &ray::Ray, world: Vec<sphere::Sphere>, depth: i32) -> vector
 }
 
 fn main() {
+    use std::time::Instant;
+    let now = Instant::now();
+
     // Image
     let aspect_ratio: f64 = 16.0 / 9.0;
     let image_width: u32 = 400;
@@ -56,11 +59,7 @@ fn main() {
     let mut img: image::RgbImage = image::ImageBuffer::new(image_width, image_height);
     let mut img_vec: Vec<vector3::Color> =
         vec![vector3::Color::new(0.0, 0.0, 0.0); (image_height * image_width) as usize];
-    for j in 0..image_height {
-        for i in 0..image_width {
-            img_vec[(i + image_width * j) as usize] = vector3::Color::new(i as f64, j as f64, 0.0);
-        }
-    }
+    //Paralellization, yay
     img_vec.par_iter_mut().enumerate().for_each(|(index, val)| {
         let mut rng = rand::thread_rng();
         let i = index % (image_width as usize);
@@ -87,5 +86,7 @@ fn main() {
         }
     }
     img.save("image.png").unwrap();
+    let elapsed = now.elapsed();
     pb.lock().unwrap().finish_print("Image Rendered :)");
+    println!("Image rendered in {:.2?}", elapsed);
 }
