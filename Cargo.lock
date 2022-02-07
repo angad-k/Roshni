@@ -364,6 +364,7 @@ dependencies = [
  "image",
  "pbr",
  "rand",
+ "rayon",
 ]
 
 [[package]]
