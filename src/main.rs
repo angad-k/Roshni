@@ -2,6 +2,7 @@ pub mod camera;
 pub mod color;
 pub mod hittable;
 pub mod image_encoder;
+pub mod material;
 pub mod ray;
 pub mod sphere;
 pub mod utils;
@@ -18,7 +19,7 @@ pub fn ray_color(r: &ray::Ray, world: Vec<sphere::Sphere>, depth: i32) -> vector
     }
     if let Some(hit) = world.clone().hit(r, 0.001, 10000000000.0) {
         //print!("{} {} {}", hit.normal.x, hit.normal.y, hit.normal.z);
-        let target = hit.p + hit.normal + vector3::Vec3::random_in_unit_sphere();
+        let target = hit.p + vector3::Vec3::random_in_hemisphere(hit.normal);
         return ray_color(&ray::Ray::new(hit.p, target - hit.p), world, depth - 1) * 0.5;
     }
     let unit_direction: vector3::Vec3 = r.dir.unit_vector();

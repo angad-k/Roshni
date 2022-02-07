@@ -58,6 +58,21 @@ impl Vec3 {
             return p;
         }
     }
+
+    pub fn random_unit_vector() -> Vec3 {
+        Vec3::random_in_unit_sphere().unit_vector()
+    }
+
+    pub fn random_in_hemisphere(normal: Vec3) -> Vec3 {
+        let in_unit_sphere = Vec3::random_in_unit_sphere();
+        if dot(in_unit_sphere, normal) > 0.0
+        // In the same hemisphere as the normal
+        {
+            return in_unit_sphere;
+        } else {
+            return in_unit_sphere * (-1.0);
+        }
+    }
 }
 
 impl ops::Add<Vec3> for Vec3 {
