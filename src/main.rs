@@ -50,9 +50,8 @@ fn main() {
     let cam = camera::Camera::new();
 
     // Progress bar
-    let mut pb = ProgressBar::new((image_height * image_width) as u64);
-    pb.format("╢▌▌░╟");
-
+    let pb = Mutex::new(ProgressBar::new((image_height * image_width) as u64));
+    pb.lock().unwrap().format("╢▌▌░╟");
     // Render
     let mut img: image::RgbImage = image::ImageBuffer::new(image_width, image_height);
     let mut img_vec: Vec<vector3::Color> =
@@ -75,6 +74,7 @@ fn main() {
             pixel_color = pixel_color + ray_color(&r, world.clone(), max_depth);
         }
         *val = pixel_color;
+        pb.lock().unwrap().inc();
     });
 
     for j in 0..image_height {
@@ -87,5 +87,5 @@ fn main() {
         }
     }
     img.save("image.png").unwrap();
-    //pb.finish_print("Image Rendered :)");
+    pb.lock().unwrap().finish_print("Image Rendered :)");
 }
