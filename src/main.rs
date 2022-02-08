@@ -13,7 +13,7 @@ use pbr::ProgressBar;
 use rand::Rng;
 use rayon::prelude::*;
 use std::sync::Mutex;
-pub fn ray_color(r: &ray::Ray, world: Vec<sphere::Sphere>, depth: i32) -> vector3::Color {
+pub fn ray_color(r: &ray::Ray, world: hittable::HittableList, depth: i32) -> vector3::Color {
     if depth <= 0 {
         return vector3::Color::new(0.0, 0.0, 0.0);
     }
@@ -39,15 +39,15 @@ fn main() {
     let max_depth: i32 = 50;
 
     // World
-    let mut world: Vec<sphere::Sphere> = Vec::new();
-    world.push(sphere::Sphere::new(
+    let mut world = hittable::HittableList::new();
+    world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(0.0, 0.0, -1.0),
         0.5,
-    ));
-    world.push(sphere::Sphere::new(
+    )));
+    world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(0.0, -100.5, -1.0),
         100.0,
-    ));
+    )));
 
     // Camera
 

@@ -29,30 +29,45 @@ pub trait Hittable {
     fn hit(self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
 }
 #[derive(Clone)]
-pub struct HittableList<HitType> {
-    objects: Vec<HitType>,
+pub struct HittableList {
+    objects: Vec<HittableObj>,
 }
 
-impl HittableList<sphere::Sphere> {
-    pub fn new() -> HittableList<sphere::Sphere> {
+#[derive(Copy, Clone)]
+pub enum HittableObj {
+    Sphere(sphere::Sphere),
+}
+
+impl Hittable for HittableObj {
+    fn hit(self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
+        match self {
+            HittableObj::Sphere(x) => x.hit(r, t_min, t_max),
+        }
+    }
+}
+
+impl HittableList {
+    pub fn new() -> HittableList {
         return HittableList {
             objects: Vec::new(),
         };
     }
-    pub fn clear(mut self) {
+    pub fn clear(mut self) -> HittableList {
         self.objects.clear();
+        self
     }
-    pub fn add(mut self, object: sphere::Sphere) {
+    pub fn add(mut self, object: HittableObj) -> HittableList {
         self.objects.push(object);
+        self
     }
 }
 
-impl Hittable for Vec<sphere::Sphere> {
+impl Hittable for HittableList {
     fn hit(self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let mut hit_record = None;
         let mut closest_so_far = t_max;
 
-        for object in self {
+        for object in self.objects {
             if let Some(hit) = object.hit(r, t_min, closest_so_far) {
                 hit_record = Some(hit);
                 closest_so_far = hit.t;
