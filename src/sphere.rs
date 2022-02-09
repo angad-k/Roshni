@@ -1,14 +1,18 @@
 use crate::hittable;
+use crate::material;
 use crate::ray;
 use crate::vector3;
-#[derive(Copy, Clone)]
+use std::sync::{Arc, Mutex};
+#[derive(Clone)]
 pub struct Sphere {
     center: vector3::Point,
     radius: f64,
+    material: Arc<Mutex<material::Material>>,
 }
 impl Sphere {
-    pub fn new(cen: vector3::Point, r: f64) -> Sphere {
+    pub fn new(cen: vector3::Point, r: f64, mat: Arc<Mutex<material::Material>>) -> Sphere {
         Sphere {
+            material: mat,
             center: cen,
             radius: r,
         }
@@ -41,6 +45,7 @@ impl hittable::Hittable for Sphere {
             t: root,
             normal: vector3::Vec3::new(0.0, 0.0, 0.0),
             front_face: false,
+            material: self.material,
         };
         let outward_normal: vector3::Vec3 = (hit_record.p - self.center) / self.radius;
         hit_record.front_face = hittable::HitRecord::is_front_face(r, &outward_normal);

@@ -1,13 +1,16 @@
+use crate::material;
 use crate::ray;
 use crate::sphere;
 use crate::vector3;
+use std::sync::{Arc, Mutex};
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct HitRecord {
     pub p: vector3::Point,
     pub normal: vector3::Vec3,
     pub t: f64,
     pub front_face: bool,
+    pub material: Arc<Mutex<material::Material>>,
 }
 
 impl HitRecord {
@@ -33,7 +36,7 @@ pub struct HittableList {
     objects: Vec<HittableObj>,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub enum HittableObj {
     Sphere(sphere::Sphere),
 }
@@ -69,7 +72,7 @@ impl Hittable for HittableList {
 
         for object in self.objects {
             if let Some(hit) = object.hit(r, t_min, closest_so_far) {
-                hit_record = Some(hit);
+                hit_record = Some(hit.clone());
                 closest_so_far = hit.t;
             }
         }

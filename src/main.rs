@@ -8,10 +8,12 @@ pub mod sphere;
 pub mod utils;
 pub mod vector3;
 use crate::hittable::Hittable;
+use crate::material::materialtrait;
 use cast::u32;
 use pbr::ProgressBar;
 use rand::Rng;
 use rayon::prelude::*;
+use std::sync::Arc;
 use std::sync::Mutex;
 pub fn ray_color(r: &ray::Ray, world: hittable::HittableList, depth: i32) -> vector3::Color {
     if depth <= 0 {
@@ -19,8 +21,14 @@ pub fn ray_color(r: &ray::Ray, world: hittable::HittableList, depth: i32) -> vec
     }
     if let Some(hit) = world.clone().hit(r, 0.001, 10000000000.0) {
         //print!("{} {} {}", hit.normal.x, hit.normal.y, hit.normal.z);
-        let target = hit.p + vector3::Vec3::random_in_hemisphere(hit.normal);
-        return ray_color(&ray::Ray::new(hit.p, target - hit.p), world, depth - 1) * 0.5;
+        //let target = hit.p + vector3::Vec3::random_in_hemisphere(hit.normal);
+        //return ray_color(&ray::Ray::new(hit.p, target - hit.p), world, depth - 1) * 0.5;
+        let (did_scatter, attenuation, scattered) = &hit.material.lock().unwrap().scatter(&r, &hit);
+        if *did_scatter {
+            return *attenuation * ray_color(scattered, world, depth - 1);
+        } else {
+            return vector3::Color::new(0.0, 0.0, 0.0);
+        }
     }
     let unit_direction: vector3::Vec3 = r.dir.unit_vector();
     let t = 0.5 * (unit_direction.y() + 1.0);
@@ -33,20 +41,44 @@ fn main() {
 
     // Image
     let aspect_ratio: f64 = 16.0 / 9.0;
-    let image_width: u32 = 400;
+    let image_width: u32 = 800;
     let image_height: u32 = u32(image_width as f64 / aspect_ratio).unwrap();
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 600;
     let max_depth: i32 = 50;
 
     // World
     let mut world = hittable::HittableList::new();
-    world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
-        vector3::Point::new(0.0, 0.0, -1.0),
-        0.5,
+    let material_ground = Arc::new(Mutex::new(material::Material::Lambertian(
+        material::Lambertian::new(vector3::Color::new(0.8, 0.8, 0.0)),
     )));
+    let material_center = Arc::new(Mutex::new(material::Material::Lambertian(
+        material::Lambertian::new(vector3::Color::new(0.7, 0.3, 0.3)),
+    )));
+    let material_left = Arc::new(Mutex::new(material::Material::Metal(material::Metal::new(
+        vector3::Color::new(0.8, 0.8, 0.8),
+    ))));
+    let material_right = Arc::new(Mutex::new(material::Material::Metal(material::Metal::new(
+        vector3::Color::new(0.8, 0.6, 0.2),
+    ))));
     world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(0.0, -100.5, -1.0),
         100.0,
+        material_ground.clone(),
+    )));
+    world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+        vector3::Point::new(0.0, 0.0, -1.0),
+        0.5,
+        material_center.clone(),
+    )));
+    world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+        vector3::Point::new(-1.0, 0.0, -1.0),
+        0.5,
+        material_left.clone(),
+    )));
+    world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+        vector3::Point::new(1.0, 0.0, -1.0),
+        0.5,
+        material_right.clone(),
     )));
 
     // Camera

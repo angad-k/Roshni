@@ -63,6 +63,12 @@ impl Vec3 {
         Vec3::random_in_unit_sphere().unit_vector()
     }
 
+    pub fn near_zero(self) -> bool {
+        // Return true if the vector is close to zero in all dimensions.
+        let s = 1e-8;
+        (self.x.abs() < s) && (self.y.abs() < s) && (self.z.abs() < s)
+    }
+
     pub fn random_in_hemisphere(normal: Vec3) -> Vec3 {
         let in_unit_sphere = Vec3::random_in_unit_sphere();
         if dot(in_unit_sphere, normal) > 0.0
@@ -173,6 +179,10 @@ impl ops::Div<f64> for Vec3 {
 
 pub fn dot(a: Vec3, b: Vec3) -> f64 {
     a.x * b.x + a.y * b.y + a.z * b.z
+}
+
+pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
+    v - n * 2.0 * dot(v, n)
 }
 
 pub fn cross(a: Vec3, b: Vec3) -> Vec3 {
