@@ -1,11 +1,9 @@
 use crate::hittable;
 use crate::ray;
-use crate::utils;
 use crate::vector3;
 use rand::Rng;
-use std::cmp;
 
-pub trait materialtrait {
+pub trait MaterialTrait {
     fn scatter(self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray);
 }
 #[derive(Copy, Clone)]
@@ -15,7 +13,7 @@ pub enum Material {
     Dielectric(Dielectric),
 }
 
-impl materialtrait for Material {
+impl MaterialTrait for Material {
     fn scatter(self, _r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray) {
         match self {
             Material::Lambertian(x) => x.scatter(_r, rec),
@@ -35,7 +33,7 @@ impl Lambertian {
     }
 }
 
-impl materialtrait for Lambertian {
+impl MaterialTrait for Lambertian {
     fn scatter(self, _r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray) {
         let mut scatter_direction = rec.normal + vector3::Vec3::random_unit_vector();
         if scatter_direction.near_zero() {
@@ -58,7 +56,7 @@ impl Metal {
     }
 }
 
-impl materialtrait for Metal {
+impl MaterialTrait for Metal {
     fn scatter(self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray) {
         let reflected = vector3::reflect(r.dir.unit_vector(), rec.normal);
         let scattered = ray::Ray::new(rec.p, reflected);
@@ -88,7 +86,7 @@ impl Dielectric {
     }
 }
 
-impl materialtrait for Dielectric {
+impl MaterialTrait for Dielectric {
     fn scatter(self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray) {
         let attenuation = vector3::Color::new(1.0, 1.0, 1.0);
         let mut refraction_ratio = 1.0 / self.ir;

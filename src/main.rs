@@ -8,7 +8,7 @@ pub mod sphere;
 pub mod utils;
 pub mod vector3;
 use crate::hittable::Hittable;
-use crate::material::materialtrait;
+use crate::material::MaterialTrait;
 use cast::u32;
 use pbr::ProgressBar;
 use rand::Rng;
@@ -144,7 +144,7 @@ pub fn random_scene() -> hittable::HittableList {
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = vector3::Color::random(0.5, 1.0);
-                    let fuzz = rng.gen_range(0.0..0.5);
+                    let _fuzz = rng.gen_range(0.0..0.5);
                     let sphere_material = Arc::new(Mutex::new(material::Material::Metal(
                         material::Metal::new(albedo),
                     )));
