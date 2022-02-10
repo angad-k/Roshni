@@ -45,13 +45,13 @@ impl Camera {
         }
     }
 
-    pub fn get_ray(self, u: f64, v: f64) -> ray::Ray {
+    pub fn get_ray(self, x: f64, t: f64) -> ray::Ray {
         let rd = vector3::Vec3::random_in_unit_disk() * self.lens_radius;
-        let offset = u * rd.x() + v * rd.y();
+        let offset = self.u * rd.x() + self.v * rd.y();
 
         return ray::Ray::new(
             self.origin + offset,
-            self.lower_left_corner + self.horizontal * u + self.vertical * v - self.origin - offset,
+            self.lower_left_corner + self.horizontal * x + self.vertical * t - self.origin - offset,
         );
     }
 }
