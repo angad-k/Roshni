@@ -41,9 +41,9 @@ fn main() {
 
     // Image
     let aspect_ratio: f64 = 16.0 / 9.0;
-    let image_width: u32 = 800;
+    let image_width: u32 = 400;
     let image_height: u32 = u32(image_width as f64 / aspect_ratio).unwrap();
-    let samples_per_pixel = 600;
+    let samples_per_pixel = 100;
     let max_depth: i32 = 50;
 
     // World
@@ -51,8 +51,11 @@ fn main() {
     let material_ground = Arc::new(Mutex::new(material::Material::Lambertian(
         material::Lambertian::new(vector3::Color::new(0.8, 0.8, 0.0)),
     )));
-    let material_center = Arc::new(Mutex::new(material::Material::Lambertian(
+    /*let material_center = Arc::new(Mutex::new(material::Material::Lambertian(
         material::Lambertian::new(vector3::Color::new(0.7, 0.3, 0.3)),
+    )));*/
+    let material_center = Arc::new(Mutex::new(material::Material::Dielectric(
+        material::Dielectric::new(1.5),
     )));
     let material_left = Arc::new(Mutex::new(material::Material::Metal(material::Metal::new(
         vector3::Color::new(0.8, 0.8, 0.8),
