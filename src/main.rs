@@ -20,9 +20,6 @@ pub fn ray_color(r: &ray::Ray, world: hittable::HittableList, depth: i32) -> vec
         return vector3::Color::new(0.0, 0.0, 0.0);
     }
     if let Some(hit) = world.clone().hit(r, 0.001, 10000000000.0) {
-        //print!("{} {} {}", hit.normal.x, hit.normal.y, hit.normal.z);
-        //let target = hit.p + vector3::Vec3::random_in_hemisphere(hit.normal);
-        //return ray_color(&ray::Ray::new(hit.p, target - hit.p), world, depth - 1) * 0.5;
         let (did_scatter, attenuation, scattered) = &hit.material.lock().unwrap().scatter(&r, &hit);
         if *did_scatter {
             return *attenuation * ray_color(scattered, world, depth - 1);
@@ -41,16 +38,15 @@ fn main() {
 
     // Image
     let aspect_ratio: f64 = 3.0 / 2.0;
-    let image_width: u32 = 600;
+    let image_width: u32 = 400;
     let image_height: u32 = u32(image_width as f64 / aspect_ratio).unwrap();
-    let samples_per_pixel = 250;
+    let samples_per_pixel = 50;
     let max_depth: i32 = 50;
 
     // World
     let world = random_scene();
 
     // Camera
-
     let lookfrom = vector3::Point::new(13.0, 2.0, 3.0);
     let lookat = vector3::Point::new(0.0, 0.0, 0.0);
     let vup = vector3::Vec3::new(0.0, 1.0, 0.0);
@@ -70,10 +66,12 @@ fn main() {
     // Progress bar
     let pb = Mutex::new(ProgressBar::new((image_height * image_width) as u64));
     pb.lock().unwrap().format("╢▌▌░╟");
+
     // Render
     let mut img: image::RgbImage = image::ImageBuffer::new(image_width, image_height);
     let mut img_vec: Vec<vector3::Color> =
         vec![vector3::Color::new(0.0, 0.0, 0.0); (image_height * image_width) as usize];
+
     //Paralellization, yay
     img_vec.par_iter_mut().enumerate().for_each(|(index, val)| {
         let mut rng = rand::thread_rng();
@@ -83,7 +81,6 @@ fn main() {
         for _s in 0..samples_per_pixel {
             let u = (i as f64 + rng.gen_range(0.0..1.0)) / (image_width - 1) as f64;
             let v = (j as f64 + rng.gen_range(0.0..1.0)) / (image_height - 1) as f64;
-            //println!("{} {} ", u, v);
             let r = cam.get_ray(u, v);
             pixel_color = pixel_color + ray_color(&r, world.clone(), max_depth);
         }
@@ -100,10 +97,11 @@ fn main() {
             );
         }
     }
+
     img.save("image.png").unwrap();
     let elapsed = now.elapsed();
     pb.lock().unwrap().finish_print("Image Rendered :)");
-    println!("Image rendered in {:.2?}", elapsed);
+    println!(" Image rendered in {:.2?}", elapsed);
 }
 
 pub fn random_scene() -> hittable::HittableList {
@@ -112,14 +110,14 @@ pub fn random_scene() -> hittable::HittableList {
     let ground_material = Arc::new(Mutex::new(material::Material::Lambertian(
         material::Lambertian::new(vector3::Color::new(0.5, 0.5, 0.5)),
     )));
-    world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(0.0, -1000.0, -0.0),
         1000.0,
         ground_material.clone(),
     )));
 
-    let mut rng = rand::thread_rng();
-    for a in -11..11 {
+    //let mut rng = rand::thread_rng();
+    /*for a in -11..11 {
         for b in -11..11 {
             let choose_mat = rng.gen_range(0.0..1.0);
             let center = vector3::Point::new(
@@ -166,12 +164,12 @@ pub fn random_scene() -> hittable::HittableList {
                 }
             }
         }
-    }
+    }*/
 
     let material1 = Arc::new(Mutex::new(material::Material::Dielectric(
         material::Dielectric::new(1.5),
     )));
-    world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(0.0, 1.0, 0.0),
         1.0,
         material1,
@@ -180,7 +178,7 @@ pub fn random_scene() -> hittable::HittableList {
     let material2 = Arc::new(Mutex::new(material::Material::Lambertian(
         material::Lambertian::new(vector3::Color::new(0.4, 0.2, 0.1)),
     )));
-    world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(-4.0, 1.0, 0.0),
         1.0,
         material2,
@@ -189,7 +187,7 @@ pub fn random_scene() -> hittable::HittableList {
     let material3 = Arc::new(Mutex::new(material::Material::Metal(material::Metal::new(
         vector3::Color::new(0.4, 0.2, 0.1),
     ))));
-    world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(4.0, 1.0, 0.0),
         1.0,
         material3,

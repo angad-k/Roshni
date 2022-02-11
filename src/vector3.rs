@@ -1,4 +1,4 @@
-use rand::Rng;
+use crate::utils;
 use std::ops;
 #[derive(Copy, Clone)]
 pub struct Vec3 {
@@ -41,11 +41,10 @@ impl Vec3 {
     }
 
     pub fn random(min: f64, max: f64) -> Vec3 {
-        let mut rng = rand::thread_rng();
         return Vec3::new(
-            rng.gen_range(min..max),
-            rng.gen_range(min..max),
-            rng.gen_range(min..max),
+            utils::random_double(min, max),
+            utils::random_double(min, max),
+            utils::random_double(min, max),
         );
     }
 
@@ -81,9 +80,12 @@ impl Vec3 {
     }
 
     pub fn random_in_unit_disk() -> Vec3 {
-        let mut rng = rand::thread_rng();
         loop {
-            let p = Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0);
+            let p = Vec3::new(
+                utils::random_double(-1.0, 1.0),
+                utils::random_double(-1.0, 1.0),
+                0.0,
+            );
             if p.length_squared() >= 1.0 {
                 continue;
             }

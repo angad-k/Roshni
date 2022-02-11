@@ -20,7 +20,7 @@ impl Sphere {
 }
 
 impl hittable::Hittable for Sphere {
-    fn hit(self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<hittable::HitRecord> {
+    fn hit(&self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<hittable::HitRecord> {
         let oc = r.origin - self.center;
         let a = r.dir.length_squared();
         let half_b = vector3::dot(oc, r.dir);
@@ -45,15 +45,10 @@ impl hittable::Hittable for Sphere {
             t: root,
             normal: vector3::Vec3::new(0.0, 0.0, 0.0),
             front_face: false,
-            material: self.material,
+            material: self.material.clone(),
         };
         let outward_normal: vector3::Vec3 = (hit_record.p - self.center) / self.radius;
-        hit_record.front_face = hittable::HitRecord::is_front_face(r, &outward_normal);
-        if hit_record.front_face {
-            hit_record.normal = outward_normal;
-        } else {
-            hit_record.normal = outward_normal * (-1.0);
-        }
+        hit_record.set_face_normal(r, &outward_normal);
         Some(hit_record)
     }
 }

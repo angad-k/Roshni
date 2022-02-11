@@ -1,12 +1,12 @@
 use crate::hittable;
 use crate::ray;
+use crate::utils;
 use crate::vector3;
-use rand::Rng;
 
 pub trait MaterialTrait {
-    fn scatter(self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray);
+    fn scatter(&self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray);
 }
-#[derive(Copy, Clone)]
+
 pub enum Material {
     Lambertian(Lambertian),
     Metal(Metal),
@@ -14,7 +14,11 @@ pub enum Material {
 }
 
 impl MaterialTrait for Material {
-    fn scatter(self, _r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray) {
+    fn scatter(
+        &self,
+        _r: &ray::Ray,
+        rec: &hittable::HitRecord,
+    ) -> (bool, vector3::Color, ray::Ray) {
         match self {
             Material::Lambertian(x) => x.scatter(_r, rec),
             Material::Metal(x) => x.scatter(_r, rec),
@@ -22,7 +26,7 @@ impl MaterialTrait for Material {
         }
     }
 }
-#[derive(Copy, Clone)]
+
 pub struct Lambertian {
     albedo: vector3::Color,
 }
@@ -34,7 +38,11 @@ impl Lambertian {
 }
 
 impl MaterialTrait for Lambertian {
-    fn scatter(self, _r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray) {
+    fn scatter(
+        &self,
+        _r: &ray::Ray,
+        rec: &hittable::HitRecord,
+    ) -> (bool, vector3::Color, ray::Ray) {
         let mut scatter_direction = rec.normal + vector3::Vec3::random_unit_vector();
         if scatter_direction.near_zero() {
             scatter_direction = rec.normal.clone();
@@ -45,7 +53,7 @@ impl MaterialTrait for Lambertian {
         (true, attenuation, scattered)
     }
 }
-#[derive(Copy, Clone)]
+
 pub struct Metal {
     albedo: vector3::Color,
 }
@@ -57,7 +65,7 @@ impl Metal {
 }
 
 impl MaterialTrait for Metal {
-    fn scatter(self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray) {
+    fn scatter(&self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray) {
         let reflected = vector3::reflect(r.dir.unit_vector(), rec.normal);
         let scattered = ray::Ray::new(rec.p, reflected);
         let attenuation = self.albedo.clone();
@@ -69,7 +77,6 @@ impl MaterialTrait for Metal {
     }
 }
 
-#[derive(Copy, Clone)]
 pub struct Dielectric {
     ir: f64,
 }
@@ -87,7 +94,7 @@ impl Dielectric {
 }
 
 impl MaterialTrait for Dielectric {
-    fn scatter(self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray) {
+    fn scatter(&self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray) {
         let attenuation = vector3::Color::new(1.0, 1.0, 1.0);
         let mut refraction_ratio = 1.0 / self.ir;
         if !rec.front_face {
@@ -102,10 +109,8 @@ impl MaterialTrait for Dielectric {
         let cannot_refract: bool = refraction_ratio * sin_theta > 1.0;
         let direction;
 
-        let mut rng = rand::thread_rng();
-
         if cannot_refract
-            || Dielectric::reflectance(cos_theta, refraction_ratio) > rng.gen_range(0.0..1.0)
+            || Dielectric::reflectance(cos_theta, refraction_ratio) > utils::random_double(0.0, 1.0)
         {
             direction = vector3::reflect(unit_direction, rec.normal);
         } else {

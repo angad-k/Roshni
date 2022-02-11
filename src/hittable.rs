@@ -14,11 +14,7 @@ pub struct HitRecord {
 }
 
 impl HitRecord {
-    pub fn is_front_face(r: &ray::Ray, outward_normal: &vector3::Vec3) -> bool {
-        vector3::dot(r.dir, *outward_normal) < 0.0
-    }
-
-    pub fn set_face_normal(mut self, r: &ray::Ray, outward_normal: &vector3::Vec3) {
+    pub fn set_face_normal(&mut self, r: &ray::Ray, outward_normal: &vector3::Vec3) {
         self.front_face = vector3::dot(r.dir, *outward_normal) < 0.0;
         if self.front_face {
             self.normal = *outward_normal;
@@ -29,7 +25,7 @@ impl HitRecord {
 }
 
 pub trait Hittable {
-    fn hit(self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
+    fn hit(&self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
 }
 #[derive(Clone)]
 pub struct HittableList {
@@ -42,7 +38,7 @@ pub enum HittableObj {
 }
 
 impl Hittable for HittableObj {
-    fn hit(self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
+    fn hit(&self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
         match self {
             HittableObj::Sphere(x) => x.hit(r, t_min, t_max),
         }
@@ -59,18 +55,17 @@ impl HittableList {
         self.objects.clear();
         self
     }
-    pub fn add(mut self, object: HittableObj) -> HittableList {
+    pub fn add(&mut self, object: HittableObj) {
         self.objects.push(object);
-        self
     }
 }
 
 impl Hittable for HittableList {
-    fn hit(self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
+    fn hit(&self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let mut hit_record = None;
         let mut closest_so_far = t_max;
 
-        for object in self.objects {
+        for object in self.objects.clone() {
             if let Some(hit) = object.hit(r, t_min, closest_so_far) {
                 hit_record = Some(hit.clone());
                 closest_so_far = hit.t;

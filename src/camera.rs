@@ -1,6 +1,5 @@
 use crate::ray;
 use crate::vector3;
-#[derive(Copy, Clone)]
 pub struct Camera {
     origin: vector3::Point,
     lower_left_corner: vector3::Point,
@@ -45,7 +44,7 @@ impl Camera {
         }
     }
 
-    pub fn get_ray(self, x: f64, t: f64) -> ray::Ray {
+    pub fn get_ray(&self, x: f64, t: f64) -> ray::Ray {
         let rd = vector3::Vec3::random_in_unit_disk() * self.lens_radius;
         let offset = self.u * rd.x() + self.v * rd.y();
 
