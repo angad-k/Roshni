@@ -2,6 +2,7 @@ use crate::material;
 use crate::ray;
 use crate::sphere;
 use crate::vector3;
+use crate::moving_sphere;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
@@ -35,12 +36,14 @@ pub struct HittableList {
 #[derive(Clone)]
 pub enum HittableObj {
     Sphere(sphere::Sphere),
+    MovingSphere(moving_sphere::MovingSphere)
 }
 
 impl Hittable for HittableObj {
     fn hit(&self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
         match self {
             HittableObj::Sphere(x) => x.hit(r, t_min, t_max),
+            HittableObj::MovingSphere(x) => x.hit(r, t_min, t_max),
         }
     }
 }

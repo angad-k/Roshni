@@ -7,6 +7,7 @@ pub mod ray;
 pub mod sphere;
 pub mod utils;
 pub mod vector3;
+pub mod moving_sphere;
 use crate::hittable::Hittable;
 use crate::material::MaterialTrait;
 use cast::u32;
@@ -37,10 +38,10 @@ fn main() {
     let now = Instant::now();
 
     // Image
-    let aspect_ratio: f64 = 3.0 / 2.0;
+    let aspect_ratio: f64 = 16.0 / 9.0;
     let image_width: u32 = 400;
     let image_height: u32 = u32(image_width as f64 / aspect_ratio).unwrap();
-    let samples_per_pixel = 50;
+    let samples_per_pixel = 200;
     let max_depth: i32 = 50;
 
     // World
@@ -61,6 +62,8 @@ fn main() {
         aspect_ratio,
         aperture,
         dist_to_focus,
+        0.0,
+        1.0
     );
 
     // Progress bar
@@ -178,8 +181,11 @@ pub fn random_scene() -> hittable::HittableList {
     let material2 = Arc::new(Mutex::new(material::Material::Lambertian(
         material::Lambertian::new(vector3::Color::new(0.4, 0.2, 0.1)),
     )));
-    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
-        vector3::Point::new(-4.0, 1.0, 0.0),
+    world.add(hittable::HittableObj::MovingSphere(moving_sphere::MovingSphere::new(
+        vector3::Point::new(-4.0, 1.0, -1.0),
+        vector3::Point::new(-4.0, 1.0, 1.0),
+        0.0,
+        1.0,
         1.0,
         material2,
     )));

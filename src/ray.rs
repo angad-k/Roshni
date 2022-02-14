@@ -3,12 +3,14 @@ use crate::vector3;
 pub struct Ray {
     pub origin: vector3::Point,
     pub dir: vector3::Vec3,
+    pub time : f64,
 }
 impl Ray {
-    pub fn new(p_orig: vector3::Point, p_dir: vector3::Vec3) -> Ray {
+    pub fn new(p_orig: vector3::Point, p_dir: vector3::Vec3, p_time : Option<f64>) -> Ray {
         Ray {
             origin: p_orig,
             dir: p_dir,
+            time : p_time.unwrap_or(0.0),
         }
     }
 
