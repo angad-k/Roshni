@@ -91,11 +91,11 @@ impl BVHNode {
     let box_right = right.bounding_box(time_0, time_1);
 
     let aabb_box = aabb::surrounding_box(box_left.unwrap(), box_right.unwrap());
-
+    //println!("BVH node created with aabb box : ({},{},{}) and ({},{},{})", aabb_box.minimum.x, aabb_box.minimum.y, aabb_box.minimum.z, aabb_box.maximum.x, aabb_box.maximum.y, aabb_box.maximum.z);
     BVHNode{
       left : Box::new(left),
       right : Box::new(right),
-      aabb_box
+      aabb_box : aabb_box
     }
   }
 }

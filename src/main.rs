@@ -43,14 +43,14 @@ fn main() {
     let aspect_ratio: f64 = 16.0 / 9.0;
     let image_width: u32 = 400;
     let image_height: u32 = u32(image_width as f64 / aspect_ratio).unwrap();
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 150;
     let max_depth: i32 = 50;
 
     // World
-    let world = random_scene();
-    //let bvh_root = bvh::BVHNode::new(world.clone(), 0, world.objects.len() as i32, 0.0, 1.0);
-    //world = hittable::HittableList::new();
-    //world.add(hittable::HittableObj::BVHNode(bvh_root));
+    let mut world = random_scene();
+    let bvh_root = bvh::BVHNode::new(world.clone(), 0, world.objects.len() as i32, 0.0, 1.0);
+    world = hittable::HittableList::new();
+    world.add(hittable::HittableObj::BVHNode(bvh_root));
 
     // Camera
     let lookfrom = vector3::Point::new(13.0, 2.0, 3.0);
@@ -118,14 +118,15 @@ pub fn random_scene() -> hittable::HittableList {
     let ground_material = Arc::new(Mutex::new(material::Material::Lambertian(
         material::Lambertian::new(vector3::Color::new(0.5, 0.5, 0.5)),
     )));
+    
     world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(0.0, -1000.0, -0.0),
         1000.0,
         ground_material.clone(),
     )));
-
+    /*
     //let mut rng = rand::thread_rng();
-    /*for a in -11..11 {
+    for a in -11..11 {
         for b in -11..11 {
             let choose_mat = utils::random_double(0.0, 1.0);
             let center = vector3::Point::new(

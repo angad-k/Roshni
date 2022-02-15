@@ -6,34 +6,35 @@ use std::cmp;
 #[derive(Copy, Clone)]
 pub struct AABB
 {
-  minimum : vector3::Point,
-  maximum : vector3::Point,
+  pub minimum : vector3::Point,
+  pub maximum : vector3::Point,
 }
 
 impl AABB{
   pub fn new(minimum : vector3::Point, maximum : vector3::Point) -> AABB {
+    //println!("AABB created with ({},{},{}) and ({},{},{})", minimum.x, minimum.y, minimum.z, maximum.x, maximum.y, maximum.z);
     AABB {
       minimum,
       maximum,
     }
   }
   pub fn hit(&self, r: &ray::Ray, mut t_min: f64, mut t_max: f64) -> bool {
-    let tx_0 = (self.minimum.x - r.origin.x / r.dir.x).min(self.maximum.x - r.origin.x / r.dir.x);
-    let tx_1 = (self.minimum.x - r.origin.x / r.dir.x).max(self.maximum.x - r.origin.x / r.dir.x);
+    let tx_0 = ((self.minimum.x - r.origin.x) / r.dir.x).min((self.maximum.x - r.origin.x) / r.dir.x);
+    let tx_1 = ((self.minimum.x - r.origin.x) / r.dir.x).max((self.maximum.x - r.origin.x) / r.dir.x);
     t_min = t_min.max(tx_0);
     t_max = t_max.min(tx_1);
     if t_max <= t_min {
       return false;
     }
-    let ty_0 = (self.minimum.y - r.origin.y / r.dir.y).min(self.maximum.y - r.origin.y / r.dir.y);
-    let ty_1 = (self.minimum.y - r.origin.y / r.dir.y).max(self.maximum.y - r.origin.y / r.dir.y);
+    let ty_0 = ((self.minimum.y - r.origin.y) / r.dir.y).min((self.maximum.y - r.origin.y) / r.dir.y);
+    let ty_1 = ((self.minimum.y - r.origin.y) / r.dir.y).max((self.maximum.y - r.origin.y) / r.dir.y);
     t_min = t_min.max(ty_0);
     t_max = t_max.min(ty_1); 
     if t_max <= t_min {
       return false;
     }
-    let tz_0 = (self.minimum.z - r.origin.z / r.dir.z).min(self.maximum.z - r.origin.z / r.dir.z);
-    let tz_1 = (self.minimum.z - r.origin.z / r.dir.z).max(self.maximum.z - r.origin.z / r.dir.z);
+    let tz_0 = ((self.minimum.z - r.origin.z) / r.dir.z).min((self.maximum.z - r.origin.z) / r.dir.z);
+    let tz_1 = ((self.minimum.z - r.origin.z) / r.dir.z).max((self.maximum.z - r.origin.z) / r.dir.z);
     t_min = t_min.max(tz_0);
     t_max = t_max.min(tz_1); 
     if t_max <= t_min {
