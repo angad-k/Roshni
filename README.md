@@ -1,4 +1,4 @@
-# Raytracer in Rust
+# Roshni - A Raytracer in Rust
 
 Implementing a raytracer in Rust here.
 Will first follow the [Raytracing in a Weekend](https://raytracing.github.io/) series and then build up from there.
