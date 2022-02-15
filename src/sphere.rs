@@ -2,6 +2,7 @@ use crate::hittable;
 use crate::material;
 use crate::ray;
 use crate::vector3;
+use crate::aabb;
 use std::sync::{Arc, Mutex};
 #[derive(Clone)]
 pub struct Sphere {
@@ -50,5 +51,11 @@ impl hittable::Hittable for Sphere {
         let outward_normal: vector3::Vec3 = (hit_record.p - self.center) / self.radius;
         hit_record.set_face_normal(r, &outward_normal);
         Some(hit_record)
+    }
+    fn bounding_box(&self, _time_0: f64, _time_1: f64) -> Option<aabb::AABB> {
+        Some(aabb::AABB::new(
+            self.center - vector3::Vec3::new(self.radius, self.radius, self.radius),
+            self.center + vector3::Vec3::new(self.radius, self.radius, self.radius)
+        ))
     }
 }

@@ -3,6 +3,8 @@ use crate::ray;
 use crate::sphere;
 use crate::vector3;
 use crate::moving_sphere;
+use crate::aabb;
+use crate::bvh;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
@@ -27,16 +29,18 @@ impl HitRecord {
 
 pub trait Hittable {
     fn hit(&self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
+    fn bounding_box(&self, time_0 : f64, time_1 : f64) -> Option<aabb::AABB>;
 }
 #[derive(Clone)]
 pub struct HittableList {
-    objects: Vec<HittableObj>,
+    pub objects: Vec<HittableObj>,
 }
 
 #[derive(Clone)]
 pub enum HittableObj {
     Sphere(sphere::Sphere),
-    MovingSphere(moving_sphere::MovingSphere)
+    MovingSphere(moving_sphere::MovingSphere),
+    BVHNode(bvh::BVHNode),
 }
 
 impl Hittable for HittableObj {
@@ -44,6 +48,14 @@ impl Hittable for HittableObj {
         match self {
             HittableObj::Sphere(x) => x.hit(r, t_min, t_max),
             HittableObj::MovingSphere(x) => x.hit(r, t_min, t_max),
+            HittableObj::BVHNode(x) => x.hit(r, t_min, t_max),
+        }
+    }
+    fn bounding_box(&self, time_0: f64, time_1: f64) -> Option<aabb::AABB> {
+        match self {
+            HittableObj::Sphere(x) => x.bounding_box(time_0, time_1),
+            HittableObj::MovingSphere(x) => x.bounding_box(time_0, time_1),
+            HittableObj::BVHNode(x) => x.bounding_box(time_0, time_1),
         }
     }
 }
@@ -76,4 +88,28 @@ impl Hittable for HittableList {
         }
         hit_record
     }
+
+    fn bounding_box(&self, time_0: f64, time_1: f64) -> Option<aabb::AABB> {
+        if self.objects.is_empty()
+        {
+            return None;
+        }
+        let mut output_box = None;
+        for object in self.objects.clone() {
+            let temp_box = object.bounding_box(time_0, time_1);
+            if temp_box.is_none()
+            {
+                return None;
+            }
+            if output_box.is_none()
+            {
+                output_box = Some(temp_box.unwrap());
+            }
+            else
+            {
+                output_box = Some(aabb::surrounding_box(temp_box.unwrap(), output_box.unwrap()));
+            }
+        }
+        output_box
+    } 
 }

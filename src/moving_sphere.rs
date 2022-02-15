@@ -2,6 +2,7 @@ use crate::hittable;
 use crate::material;
 use crate::ray;
 use crate::vector3;
+use crate::aabb;
 use std::sync::{Arc, Mutex};
 #[derive(Clone)]
 pub struct MovingSphere {
@@ -60,5 +61,16 @@ impl hittable::Hittable for MovingSphere {
         let outward_normal: vector3::Vec3 = (hit_record.p - self.center(r.time)) / self.radius;
         hit_record.set_face_normal(r, &outward_normal);
         Some(hit_record)
+    }
+
+    fn bounding_box(&self, time_0: f64, time_1: f64) -> Option<aabb::AABB> {
+        let box0 = aabb::AABB::new(
+            self.center(time_0) - vector3::Vec3::new(self.radius, self.radius, self.radius),
+            self.center(time_0) + vector3::Vec3::new(self.radius, self.radius, self.radius));
+        let box1 = aabb::AABB::new(
+            self.center(time_1) - vector3::Vec3::new(self.radius, self.radius, self.radius),
+            self.center(time_1) + vector3::Vec3::new(self.radius, self.radius, self.radius));
+
+        Some(aabb::surrounding_box(box0, box1))
     }
 }

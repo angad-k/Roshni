@@ -8,6 +8,8 @@ pub mod sphere;
 pub mod utils;
 pub mod vector3;
 pub mod moving_sphere;
+pub mod aabb;
+pub mod bvh;
 use crate::hittable::Hittable;
 use crate::material::MaterialTrait;
 use cast::u32;
@@ -41,11 +43,14 @@ fn main() {
     let aspect_ratio: f64 = 16.0 / 9.0;
     let image_width: u32 = 400;
     let image_height: u32 = u32(image_width as f64 / aspect_ratio).unwrap();
-    let samples_per_pixel = 200;
+    let samples_per_pixel = 100;
     let max_depth: i32 = 50;
 
     // World
     let world = random_scene();
+    //let bvh_root = bvh::BVHNode::new(world.clone(), 0, world.objects.len() as i32, 0.0, 1.0);
+    //world = hittable::HittableList::new();
+    //world.add(hittable::HittableObj::BVHNode(bvh_root));
 
     // Camera
     let lookfrom = vector3::Point::new(13.0, 2.0, 3.0);
@@ -122,11 +127,11 @@ pub fn random_scene() -> hittable::HittableList {
     //let mut rng = rand::thread_rng();
     /*for a in -11..11 {
         for b in -11..11 {
-            let choose_mat = rng.gen_range(0.0..1.0);
+            let choose_mat = utils::random_double(0.0, 1.0);
             let center = vector3::Point::new(
-                a as f64 + 0.9 * rng.gen_range(0.0..1.0),
+                a as f64 + 0.9 * utils::random_double(0.0, 1.0),
                 0.2,
-                b as f64 + 0.9 * rng.gen_range(0.0..1.0),
+                b as f64 + 0.9 * utils::random_double(0.0, 1.0),
             );
 
             if (center - vector3::Point::new(4.0, 0.2, 0.0)).length() > 0.9 {
@@ -137,7 +142,7 @@ pub fn random_scene() -> hittable::HittableList {
                     let sphere_material = Arc::new(Mutex::new(material::Material::Lambertian(
                         material::Lambertian::new(albedo),
                     )));
-                    world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+                    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
                         center,
                         0.2,
                         sphere_material,
@@ -145,11 +150,11 @@ pub fn random_scene() -> hittable::HittableList {
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = vector3::Color::random(0.5, 1.0);
-                    let _fuzz = rng.gen_range(0.0..0.5);
+                    let _fuzz = utils::random_double(0.0, 0.5);
                     let sphere_material = Arc::new(Mutex::new(material::Material::Metal(
                         material::Metal::new(albedo),
                     )));
-                    world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+                    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
                         center,
                         0.2,
                         sphere_material,
@@ -159,7 +164,7 @@ pub fn random_scene() -> hittable::HittableList {
                     let sphere_material = Arc::new(Mutex::new(material::Material::Dielectric(
                         material::Dielectric::new(1.5),
                     )));
-                    world = world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+                    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
                         center,
                         0.2,
                         sphere_material,
@@ -181,6 +186,7 @@ pub fn random_scene() -> hittable::HittableList {
     let material2 = Arc::new(Mutex::new(material::Material::Lambertian(
         material::Lambertian::new(vector3::Color::new(0.4, 0.2, 0.1)),
     )));
+    
     world.add(hittable::HittableObj::MovingSphere(moving_sphere::MovingSphere::new(
         vector3::Point::new(-4.0, 1.0, -1.0),
         vector3::Point::new(-4.0, 1.0, 1.0),
