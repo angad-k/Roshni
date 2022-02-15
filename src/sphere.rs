@@ -20,6 +20,14 @@ impl Sphere {
     }
 }
 
+pub fn get_sphere_uv(p : vector3::Point) -> (f64, f64) {
+    let theta = (-p.y).acos();
+    let phi = (-p.z).atan2(p.x);
+    let u = phi/(2.0*std::f64::consts::PI);
+    let v = theta/std::f64::consts::PI;
+    (u,v)
+}
+
 impl hittable::Hittable for Sphere {
     fn hit(&self, r: &ray::Ray, t_min: f64, t_max: f64) -> Option<hittable::HitRecord> {
         let oc = r.origin - self.center;
@@ -47,9 +55,14 @@ impl hittable::Hittable for Sphere {
             normal: vector3::Vec3::new(0.0, 0.0, 0.0),
             front_face: false,
             material: self.material.clone(),
+            u : 0.0,
+            v : 0.0,
         };
         let outward_normal: vector3::Vec3 = (hit_record.p - self.center) / self.radius;
         hit_record.set_face_normal(r, &outward_normal);
+        let (u, v) = get_sphere_uv(outward_normal);
+        hit_record.u = u;
+        hit_record.v = v;
         Some(hit_record)
     }
     fn bounding_box(&self, _time_0: f64, _time_1: f64) -> Option<aabb::AABB> {

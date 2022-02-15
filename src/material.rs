@@ -1,7 +1,11 @@
 use crate::hittable;
 use crate::ray;
+use crate::texture;
+use crate::texture::texture_trait;
 use crate::utils;
 use crate::vector3;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 pub trait MaterialTrait {
     fn scatter(&self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray);
@@ -28,28 +32,31 @@ impl MaterialTrait for Material {
 }
 
 pub struct Lambertian {
-    albedo: vector3::Color,
+    albedo: Arc<Mutex<texture::Texture>>,
 }
 
 impl Lambertian {
     pub fn new(p_albedo: vector3::Color) -> Lambertian {
+        Lambertian {
+            albedo: Arc::new(Mutex::new(texture::Texture::SolidColor(
+                texture::SolidColor::new(p_albedo.x, p_albedo.y, p_albedo.z),
+            ))),
+        }
+    }
+    pub fn new_from_texture(p_albedo: Arc<Mutex<texture::Texture>>) -> Lambertian {
         Lambertian { albedo: p_albedo }
     }
 }
 
 impl MaterialTrait for Lambertian {
-    fn scatter(
-        &self,
-        r: &ray::Ray,
-        rec: &hittable::HitRecord,
-    ) -> (bool, vector3::Color, ray::Ray) {
+    fn scatter(&self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray) {
         let mut scatter_direction = rec.normal + vector3::Vec3::random_unit_vector();
         if scatter_direction.near_zero() {
             scatter_direction = rec.normal.clone();
         }
         // yeh sab jo change krke bhej rhe usse bhi hit record mei dalna mangtau
         let scattered = ray::Ray::new(rec.p, scatter_direction, Some(r.time));
-        let attenuation = self.albedo.clone();
+        let attenuation = self.albedo.lock().unwrap().value(rec.u, rec.v, rec.p);
         (true, attenuation, scattered)
     }
 }

@@ -57,9 +57,14 @@ impl hittable::Hittable for MovingSphere {
             normal: vector3::Vec3::new(0.0, 0.0, 0.0),
             front_face: false,
             material: self.material.clone(),
+            u : 0.0,
+            v : 0.0
         };
         let outward_normal: vector3::Vec3 = (hit_record.p - self.center(r.time)) / self.radius;
         hit_record.set_face_normal(r, &outward_normal);
+        let (u, v) = crate::sphere::get_sphere_uv(outward_normal);
+        hit_record.u = u;
+        hit_record.v = v;
         Some(hit_record)
     }
 
