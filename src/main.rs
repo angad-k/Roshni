@@ -1,16 +1,17 @@
+pub mod aabb;
+pub mod bvh;
 pub mod camera;
 pub mod color;
 pub mod hittable;
 pub mod image_encoder;
 pub mod material;
+pub mod moving_sphere;
+pub mod perlin;
 pub mod ray;
 pub mod sphere;
+pub mod texture;
 pub mod utils;
 pub mod vector3;
-pub mod moving_sphere;
-pub mod aabb;
-pub mod bvh;
-pub mod texture;
 use crate::hittable::Hittable;
 use crate::material::MaterialTrait;
 use cast::u32;
@@ -48,7 +49,7 @@ fn main() {
     let max_depth: i32 = 50;
 
     // World
-    let mut world = initialize_scene(0);
+    let mut world = initialize_scene(1);
     let bvh_root = bvh::BVHNode::new(world.clone(), 0, world.objects.len() as i32, 0.0, 1.0);
     world = hittable::HittableList::new();
     world.add(hittable::HittableObj::BVHNode(bvh_root));
@@ -69,7 +70,7 @@ fn main() {
         aperture,
         dist_to_focus,
         0.0,
-        1.0
+        1.0,
     );
 
     // Progress bar
@@ -113,30 +114,53 @@ fn main() {
     println!(" Image rendered in {:.2?}", elapsed);
 }
 
-pub fn initialize_scene(x : i32) -> hittable::HittableList {
-    if x == 0
-    {
+pub fn initialize_scene(x: i32) -> hittable::HittableList {
+    if x == 0 {
         book_1_capstone()
+    } else {
+        two_perlin_spheres()
     }
-    else
-    {
-        book_1_capstone()
-    }
+}
+
+pub fn two_perlin_spheres() -> hittable::HittableList {
+    let mut world = hittable::HittableList::new();
+
+    let per_tex = Arc::new(Mutex::new(texture::Texture::NoiseTexture(
+        texture::NoiseTexture::new(4.0),
+    )));
+
+    let material = Arc::new(Mutex::new(material::Material::Lambertian(
+        material::Lambertian::new_from_texture(per_tex),
+    )));
+
+    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+        vector3::Point::new(0.0, -1000.0, -0.0),
+        1000.0,
+        material.clone(),
+    )));
+
+    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+        vector3::Point::new(0.0, 2.0, 0.0),
+        2.0,
+        material.clone(),
+    )));
+
+    world
 }
 
 pub fn book_1_capstone() -> hittable::HittableList {
     let mut world = hittable::HittableList::new();
-    let checker_texture = Arc::new(Mutex::new(texture::Texture::Checker(texture::Checker::new())));
+    let checker_texture = Arc::new(Mutex::new(texture::Texture::Checker(
+        texture::Checker::new(),
+    )));
     let ground_material = Arc::new(Mutex::new(material::Material::Lambertian(
         material::Lambertian::new_from_texture(checker_texture),
     )));
-    
     world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(0.0, -1000.0, -0.0),
         1000.0,
         ground_material.clone(),
     )));
-    
     //let mut rng = rand::thread_rng();
     /*
     for a in -11..11 {
@@ -200,15 +224,17 @@ pub fn book_1_capstone() -> hittable::HittableList {
     let material2 = Arc::new(Mutex::new(material::Material::Lambertian(
         material::Lambertian::new(vector3::Color::new(0.4, 0.2, 0.1)),
     )));
-    
-    world.add(hittable::HittableObj::MovingSphere(moving_sphere::MovingSphere::new(
-        vector3::Point::new(-4.0, 1.0, 0.0),
-        vector3::Point::new(-4.0, 1.0, 0.0),
-        0.0,
-        1.0,
-        1.0,
-        material2,
-    )));
+
+    world.add(hittable::HittableObj::MovingSphere(
+        moving_sphere::MovingSphere::new(
+            vector3::Point::new(-4.0, 1.0, 0.0),
+            vector3::Point::new(-4.0, 1.0, 0.0),
+            0.0,
+            1.0,
+            1.0,
+            material2,
+        ),
+    ));
 
     let material3 = Arc::new(Mutex::new(material::Material::Metal(material::Metal::new(
         vector3::Color::new(0.4, 0.2, 0.1),

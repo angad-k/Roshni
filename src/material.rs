@@ -1,7 +1,7 @@
 use crate::hittable;
 use crate::ray;
 use crate::texture;
-use crate::texture::texture_trait;
+use crate::texture::TextureTrait;
 use crate::utils;
 use crate::vector3;
 use std::sync::Arc;
