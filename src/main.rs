@@ -20,24 +20,33 @@ use rand::Rng;
 use rayon::prelude::*;
 use std::sync::Arc;
 use std::sync::Mutex;
-pub fn ray_color(r: &ray::Ray, world: hittable::HittableList, depth: i32) -> vector3::Color {
+pub fn ray_color(
+    r: &ray::Ray,
+    world: hittable::HittableList,
+    background_color: vector3::Color,
+    depth: i32,
+) -> vector3::Color {
     if depth <= 0 {
         return vector3::Color::new(0.0, 0.0, 0.0);
     }
     if let Some(hit) = world.clone().hit(r, 0.001, 10000000000.0) {
-        let (did_scatter, attenuation, scattered) = &hit.material.lock().unwrap().scatter(&r, &hit);
-        if *did_scatter {
-            return *attenuation * ray_color(scattered, world, depth - 1);
+        let hit_material = hit.material.lock().unwrap();
+        let scattered = &hit_material.scatter(&r, &hit);
+        if !scattered.is_none() {
+            let (attenuation, scattered) = scattered.unwrap();
+            return attenuation * ray_color(&scattered, world, background_color, depth - 1);
         } else {
-            return vector3::Color::new(0.0, 0.0, 0.0);
+            return hit_material.emit(hit.u, hit.v, hit.p);
         }
     }
     let unit_direction: vector3::Vec3 = r.dir.unit_vector();
     let t = 0.5 * (unit_direction.y() + 1.0);
-    return vector3::Color::new(1.0, 1.0, 1.0) * (1.0 - t) + vector3::Color::new(0.5, 0.7, 1.0) * t;
+    return background_color;
 }
 
 fn main() {
+    image_encoder::read_image("image.png");
+
     use std::time::Instant;
     let now = Instant::now();
 
@@ -49,7 +58,7 @@ fn main() {
     let max_depth: i32 = 50;
 
     // World
-    let mut world = initialize_scene(1);
+    let mut world = initialize_scene(3);
     let bvh_root = bvh::BVHNode::new(world.clone(), 0, world.objects.len() as i32, 0.0, 1.0);
     world = hittable::HittableList::new();
     world.add(hittable::HittableObj::BVHNode(bvh_root));
@@ -60,6 +69,7 @@ fn main() {
     let vup = vector3::Vec3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;
     let aperture = 0.1;
+    let bg_color = vector3::Color::new(0.0, 0.0, 0.0);
 
     let cam = camera::Camera::new(
         lookfrom,
@@ -92,7 +102,7 @@ fn main() {
             let u = (i as f64 + rng.gen_range(0.0..1.0)) / (image_width - 1) as f64;
             let v = (j as f64 + rng.gen_range(0.0..1.0)) / (image_height - 1) as f64;
             let r = cam.get_ray(u, v);
-            pixel_color = pixel_color + ray_color(&r, world.clone(), max_depth);
+            pixel_color = pixel_color + ray_color(&r, world.clone(), bg_color, max_depth);
         }
         *val = pixel_color;
         pb.lock().unwrap().inc();
@@ -117,9 +127,67 @@ fn main() {
 pub fn initialize_scene(x: i32) -> hittable::HittableList {
     if x == 0 {
         book_1_capstone()
-    } else {
+    } else if x == 1 {
         two_perlin_spheres()
+    } else if x == 2 {
+        image_sphere()
+    } else {
+        lights()
     }
+}
+
+pub fn lights() -> hittable::HittableList {
+    let mut world = hittable::HittableList::new();
+
+    let image_tex = Arc::new(Mutex::new(texture::Texture::ImageTexture(
+        texture::ImageTexture::new("renders/book_1.png"),
+    )));
+
+    let material = Arc::new(Mutex::new(material::Material::DiffuseLight(
+        material::DiffuseLight::new(image_tex),
+    )));
+
+    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+        vector3::Point::new(0.0, 2.0, 0.0),
+        2.0,
+        material.clone(),
+    )));
+
+    let per_tex = Arc::new(Mutex::new(texture::Texture::NoiseTexture(
+        texture::NoiseTexture::new(4.0),
+    )));
+
+    let material = Arc::new(Mutex::new(material::Material::Lambertian(
+        material::Lambertian::new_from_texture(per_tex),
+    )));
+
+    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+        vector3::Point::new(0.0, -1000.0, -0.0),
+        1000.0,
+        material.clone(),
+    )));
+
+    world
+}
+
+pub fn image_sphere() -> hittable::HittableList {
+    let mut world = hittable::HittableList::new();
+
+    let image_tex = Arc::new(Mutex::new(texture::Texture::ImageTexture(
+        texture::ImageTexture::new("renders/book_1.png"),
+    )));
+
+    let material = Arc::new(Mutex::new(material::Material::Lambertian(
+        material::Lambertian::new_from_texture(image_tex),
+    )));
+
+    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+        vector3::Point::new(0.0, 0.0, 0.0),
+        2.0,
+        material.clone(),
+    )));
+
+    world
 }
 
 pub fn two_perlin_spheres() -> hittable::HittableList {

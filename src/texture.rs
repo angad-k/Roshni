@@ -1,5 +1,7 @@
 use crate::perlin::Perlin;
 use crate::vector3;
+use image::DynamicImage;
+use image::GenericImage;
 use std::sync::Arc;
 use std::sync::Mutex;
 pub trait TextureTrait {
@@ -10,6 +12,7 @@ pub enum Texture {
   SolidColor(SolidColor),
   Checker(Checker),
   NoiseTexture(NoiseTexture),
+  ImageTexture(ImageTexture),
 }
 
 impl TextureTrait for Texture {
@@ -18,6 +21,7 @@ impl TextureTrait for Texture {
       Texture::SolidColor(x) => x.value(u, v, p),
       Texture::Checker(x) => x.value(u, v, p),
       Texture::NoiseTexture(x) => x.value(u, v, p),
+      Texture::ImageTexture(x) => x.value(u, v, p),
     }
   }
 }
@@ -95,5 +99,50 @@ impl TextureTrait for NoiseTexture {
     vector3::Color::new(1.0, 1.0, 1.0)
       * 0.5
       * (1.0 + (self.scale * p.z() + 10.0 * self.noise.turb(p, 7)).sin())
+  }
+}
+
+// -------------------- IMAGE -------------------------------------------------------
+
+pub struct ImageTexture {
+  img: DynamicImage,
+  height: u32,
+  width: u32,
+}
+
+impl ImageTexture {
+  pub fn new(path: &str) -> ImageTexture {
+    let img = crate::image_encoder::read_image(path);
+    let height = img.height();
+    let width = img.width();
+    ImageTexture {
+      img,
+      height: height,
+      width: width,
+    }
+  }
+}
+
+impl TextureTrait for ImageTexture {
+  fn value(&self, mut u: f64, mut v: f64, _p: vector3::Point) -> vector3::Color {
+    u = u.clamp(0.0, 1.0);
+    v = 1.0 - v.clamp(0.0, 1.0);
+    let mut i = (u * self.width as f64) as u32;
+    let mut j = (v * self.height as f64) as u32;
+    if i >= self.width {
+      i = self.width - 1;
+    }
+    if j >= self.height {
+      j = self.height - 1;
+    }
+
+    let color_scale = 1.0 / 255.0;
+
+    let pixel = self.img.get_pixel(i, j);
+    vector3::Color::new(
+      pixel[0] as f64 * color_scale,
+      pixel[1] as f64 * color_scale,
+      pixel[2] as f64 * color_scale,
+    )
   }
 }
