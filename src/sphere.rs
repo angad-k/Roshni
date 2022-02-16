@@ -1,17 +1,17 @@
+use crate::aabb;
 use crate::hittable;
 use crate::material;
 use crate::ray;
 use crate::vector3;
-use crate::aabb;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 #[derive(Clone)]
 pub struct Sphere {
     center: vector3::Point,
     radius: f64,
-    material: Arc<Mutex<material::Material>>,
+    material: Arc<material::Material>,
 }
 impl Sphere {
-    pub fn new(cen: vector3::Point, r: f64, mat: Arc<Mutex<material::Material>>) -> Sphere {
+    pub fn new(cen: vector3::Point, r: f64, mat: Arc<material::Material>) -> Sphere {
         Sphere {
             material: mat,
             center: cen,
@@ -20,12 +20,12 @@ impl Sphere {
     }
 }
 
-pub fn get_sphere_uv(p : vector3::Point) -> (f64, f64) {
+pub fn get_sphere_uv(p: vector3::Point) -> (f64, f64) {
     let theta = (-p.y).acos();
     let phi = (-p.z).atan2(p.x);
-    let u = phi/(2.0*std::f64::consts::PI);
-    let v = theta/std::f64::consts::PI;
-    (u,v)
+    let u = phi / (2.0 * std::f64::consts::PI);
+    let v = theta / std::f64::consts::PI;
+    (u, v)
 }
 
 impl hittable::Hittable for Sphere {
@@ -55,8 +55,8 @@ impl hittable::Hittable for Sphere {
             normal: vector3::Vec3::new(0.0, 0.0, 0.0),
             front_face: false,
             material: self.material.clone(),
-            u : 0.0,
-            v : 0.0,
+            u: 0.0,
+            v: 0.0,
         };
         let outward_normal: vector3::Vec3 = (hit_record.p - self.center) / self.radius;
         hit_record.set_face_normal(r, &outward_normal);
@@ -68,7 +68,7 @@ impl hittable::Hittable for Sphere {
     fn bounding_box(&self, _time_0: f64, _time_1: f64) -> Option<aabb::AABB> {
         Some(aabb::AABB::new(
             self.center - vector3::Vec3::new(self.radius, self.radius, self.radius),
-            self.center + vector3::Vec3::new(self.radius, self.radius, self.radius)
+            self.center + vector3::Vec3::new(self.radius, self.radius, self.radius),
         ))
     }
 }

@@ -1,4 +1,5 @@
 pub mod aabb;
+pub mod aarect;
 pub mod bvh;
 pub mod camera;
 pub mod color;
@@ -30,7 +31,7 @@ pub fn ray_color(
         return vector3::Color::new(0.0, 0.0, 0.0);
     }
     if let Some(hit) = world.clone().hit(r, 0.001, 10000000000.0) {
-        let hit_material = hit.material.lock().unwrap();
+        let hit_material = hit.material.clone();
         let scattered = &hit_material.scatter(&r, &hit);
         if !scattered.is_none() {
             let (attenuation, scattered) = scattered.unwrap();
@@ -39,9 +40,7 @@ pub fn ray_color(
             return hit_material.emit(hit.u, hit.v, hit.p);
         }
     }
-    let unit_direction: vector3::Vec3 = r.dir.unit_vector();
-    let t = 0.5 * (unit_direction.y() + 1.0);
-    return background_color;
+    background_color
 }
 
 fn main() {
@@ -64,8 +63,8 @@ fn main() {
     world.add(hittable::HittableObj::BVHNode(bvh_root));
 
     // Camera
-    let lookfrom = vector3::Point::new(13.0, 2.0, 3.0);
-    let lookat = vector3::Point::new(0.0, 0.0, 0.0);
+    let lookfrom = vector3::Point::new(26.0, 3.0, 6.0);
+    let lookat = vector3::Point::new(0.0, 2.0, 0.0);
     let vup = vector3::Vec3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;
     let aperture = 0.1;
@@ -97,10 +96,12 @@ fn main() {
         let mut rng = rand::thread_rng();
         let i = index % (image_width as usize);
         let j = index / (image_width as usize);
+        //println!("i = {} j = {}", i, j);
         let mut pixel_color = vector3::Color::new(0.0, 0.0, 0.0);
         for _s in 0..samples_per_pixel {
             let u = (i as f64 + rng.gen_range(0.0..1.0)) / (image_width - 1) as f64;
             let v = (j as f64 + rng.gen_range(0.0..1.0)) / (image_height - 1) as f64;
+            //println!("u = {} v = {}", u, v);
             let r = cam.get_ray(u, v);
             pixel_color = pixel_color + ray_color(&r, world.clone(), bg_color, max_depth);
         }
@@ -139,12 +140,18 @@ pub fn initialize_scene(x: i32) -> hittable::HittableList {
 pub fn lights() -> hittable::HittableList {
     let mut world = hittable::HittableList::new();
 
-    let image_tex = Arc::new(Mutex::new(texture::Texture::SolidColor(
-        texture::SolidColor::new(5.0, 5.0, 5.0),
+    let per_tex = Arc::new(texture::Texture::NoiseTexture(texture::NoiseTexture::new(
+        4.0,
     )));
 
-    let material = Arc::new(Mutex::new(material::Material::DiffuseLight(
-        material::DiffuseLight::new(image_tex),
+    let material = Arc::new(material::Material::Lambertian(
+        material::Lambertian::new_from_texture(per_tex),
+    ));
+
+    world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
+        vector3::Point::new(0.0, -1000.0, -0.0),
+        1000.0,
+        material.clone(),
     )));
 
     world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
@@ -153,18 +160,25 @@ pub fn lights() -> hittable::HittableList {
         material.clone(),
     )));
 
-    let per_tex = Arc::new(Mutex::new(texture::Texture::NoiseTexture(
-        texture::NoiseTexture::new(4.0),
-    )));
-
-    let material = Arc::new(Mutex::new(material::Material::Lambertian(
-        material::Lambertian::new_from_texture(per_tex),
-    )));
+    let diff = Arc::new(material::Material::DiffuseLight(
+        material::DiffuseLight::new(Arc::new(texture::Texture::SolidColor(
+            texture::SolidColor::new(5.0, 5.0, 5.0),
+        ))),
+    ));
 
     world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
-        vector3::Point::new(0.0, -1000.0, -0.0),
-        1000.0,
-        material.clone(),
+        vector3::Point::new(0.0, 7.0, 0.0),
+        2.0,
+        diff.clone(),
+    )));
+
+    world.add(hittable::HittableObj::XYRect(aarect::XYRect::new(
+        3.0,
+        5.0,
+        1.0,
+        3.0,
+        -2.0,
+        diff.clone(),
     )));
 
     world
@@ -173,13 +187,13 @@ pub fn lights() -> hittable::HittableList {
 pub fn image_sphere() -> hittable::HittableList {
     let mut world = hittable::HittableList::new();
 
-    let image_tex = Arc::new(Mutex::new(texture::Texture::ImageTexture(
-        texture::ImageTexture::new("renders/book_1.png"),
+    let image_tex = Arc::new(texture::Texture::ImageTexture(texture::ImageTexture::new(
+        "renders/book_1.png",
     )));
 
-    let material = Arc::new(Mutex::new(material::Material::Lambertian(
+    let material = Arc::new(material::Material::Lambertian(
         material::Lambertian::new_from_texture(image_tex),
-    )));
+    ));
 
     world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(0.0, 0.0, 0.0),
@@ -193,13 +207,13 @@ pub fn image_sphere() -> hittable::HittableList {
 pub fn two_perlin_spheres() -> hittable::HittableList {
     let mut world = hittable::HittableList::new();
 
-    let per_tex = Arc::new(Mutex::new(texture::Texture::NoiseTexture(
-        texture::NoiseTexture::new(4.0),
+    let per_tex = Arc::new(texture::Texture::NoiseTexture(texture::NoiseTexture::new(
+        4.0,
     )));
 
-    let material = Arc::new(Mutex::new(material::Material::Lambertian(
+    let material = Arc::new(material::Material::Lambertian(
         material::Lambertian::new_from_texture(per_tex),
-    )));
+    ));
 
     world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(0.0, -1000.0, -0.0),
@@ -218,19 +232,16 @@ pub fn two_perlin_spheres() -> hittable::HittableList {
 
 pub fn book_1_capstone() -> hittable::HittableList {
     let mut world = hittable::HittableList::new();
-    let checker_texture = Arc::new(Mutex::new(texture::Texture::Checker(
-        texture::Checker::new(),
-    )));
-    let ground_material = Arc::new(Mutex::new(material::Material::Lambertian(
+    let checker_texture = Arc::new(texture::Texture::Checker(texture::Checker::new()));
+    let ground_material = Arc::new(material::Material::Lambertian(
         material::Lambertian::new_from_texture(checker_texture),
-    )));
+    ));
     world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(0.0, -1000.0, -0.0),
         1000.0,
         ground_material.clone(),
     )));
     //let mut rng = rand::thread_rng();
-    /*
     for a in -11..11 {
         for b in -11..11 {
             let choose_mat = utils::random_double(0.0, 1.0);
@@ -245,9 +256,9 @@ pub fn book_1_capstone() -> hittable::HittableList {
                     // diffuse
                     let albedo =
                         vector3::Color::random(0.0, 1.0) * vector3::Color::random(0.0, 1.0);
-                    let sphere_material = Arc::new(Mutex::new(material::Material::Lambertian(
+                    let sphere_material = Arc::new(material::Material::Lambertian(
                         material::Lambertian::new(albedo),
-                    )));
+                    ));
                     world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
                         center,
                         0.2,
@@ -257,9 +268,8 @@ pub fn book_1_capstone() -> hittable::HittableList {
                     // metal
                     let albedo = vector3::Color::random(0.5, 1.0);
                     let _fuzz = utils::random_double(0.0, 0.5);
-                    let sphere_material = Arc::new(Mutex::new(material::Material::Metal(
-                        material::Metal::new(albedo),
-                    )));
+                    let sphere_material =
+                        Arc::new(material::Material::Metal(material::Metal::new(albedo)));
                     world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
                         center,
                         0.2,
@@ -267,9 +277,9 @@ pub fn book_1_capstone() -> hittable::HittableList {
                     )));
                 } else {
                     // glass
-                    let sphere_material = Arc::new(Mutex::new(material::Material::Dielectric(
+                    let sphere_material = Arc::new(material::Material::Dielectric(
                         material::Dielectric::new(1.5),
-                    )));
+                    ));
                     world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
                         center,
                         0.2,
@@ -278,10 +288,10 @@ pub fn book_1_capstone() -> hittable::HittableList {
                 }
             }
         }
-    }*/
+    }
 
-    let material1 = Arc::new(Mutex::new(material::Material::Dielectric(
-        material::Dielectric::new(1.5),
+    let material1 = Arc::new(material::Material::Dielectric(material::Dielectric::new(
+        1.5,
     )));
     world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(0.0, 1.0, 0.0),
@@ -289,8 +299,8 @@ pub fn book_1_capstone() -> hittable::HittableList {
         material1,
     )));
 
-    let material2 = Arc::new(Mutex::new(material::Material::Lambertian(
-        material::Lambertian::new(vector3::Color::new(0.4, 0.2, 0.1)),
+    let material2 = Arc::new(material::Material::Lambertian(material::Lambertian::new(
+        vector3::Color::new(0.4, 0.2, 0.1),
     )));
 
     world.add(hittable::HittableObj::MovingSphere(
@@ -304,9 +314,9 @@ pub fn book_1_capstone() -> hittable::HittableList {
         ),
     ));
 
-    let material3 = Arc::new(Mutex::new(material::Material::Metal(material::Metal::new(
+    let material3 = Arc::new(material::Material::Metal(material::Metal::new(
         vector3::Color::new(0.4, 0.2, 0.1),
-    ))));
+    )));
     world.add(hittable::HittableObj::Sphere(sphere::Sphere::new(
         vector3::Point::new(4.0, 1.0, 0.0),
         1.0,

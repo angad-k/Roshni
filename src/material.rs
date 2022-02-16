@@ -5,7 +5,6 @@ use crate::texture::TextureTrait;
 use crate::utils;
 use crate::vector3;
 use std::sync::Arc;
-use std::sync::Mutex;
 
 pub trait MaterialTrait {
     fn scatter(
@@ -13,7 +12,7 @@ pub trait MaterialTrait {
         r: &ray::Ray,
         rec: &hittable::HitRecord,
     ) -> Option<(vector3::Color, ray::Ray)>;
-    fn emit(&self, u: f64, v: f64, p: vector3::Point) -> vector3::Color {
+    fn emit(&self, _u: f64, _v: f64, _p: vector3::Point) -> vector3::Color {
         vector3::Color::new(0.0, 0.0, 0.0)
     }
 }
@@ -52,18 +51,18 @@ impl MaterialTrait for Material {
 //------------------------ LAMBERTIAN -------------------------------------------------------
 
 pub struct Lambertian {
-    albedo: Arc<Mutex<texture::Texture>>,
+    albedo: Arc<texture::Texture>,
 }
 
 impl Lambertian {
     pub fn new(p_albedo: vector3::Color) -> Lambertian {
         Lambertian {
-            albedo: Arc::new(Mutex::new(texture::Texture::SolidColor(
-                texture::SolidColor::new(p_albedo.x, p_albedo.y, p_albedo.z),
+            albedo: Arc::new(texture::Texture::SolidColor(texture::SolidColor::new(
+                p_albedo.x, p_albedo.y, p_albedo.z,
             ))),
         }
     }
-    pub fn new_from_texture(p_albedo: Arc<Mutex<texture::Texture>>) -> Lambertian {
+    pub fn new_from_texture(p_albedo: Arc<texture::Texture>) -> Lambertian {
         Lambertian { albedo: p_albedo }
     }
 }
@@ -80,7 +79,7 @@ impl MaterialTrait for Lambertian {
         }
         // yeh sab jo change krke bhej rhe usse bhi hit record mei dalna mangtau
         let scattered = ray::Ray::new(rec.p, scatter_direction, Some(r.time));
-        let attenuation = self.albedo.lock().unwrap().value(rec.u, rec.v, rec.p);
+        let attenuation = self.albedo.value(rec.u, rec.v, rec.p);
         Some((attenuation, scattered))
     }
 }
@@ -164,11 +163,11 @@ impl MaterialTrait for Dielectric {
 //------------------------ DIFFUSE LIGHT -------------------------------------------------------
 
 pub struct DiffuseLight {
-    emit_tex: Arc<Mutex<texture::Texture>>,
+    emit_tex: Arc<texture::Texture>,
 }
 
 impl DiffuseLight {
-    pub fn new(tex: Arc<Mutex<texture::Texture>>) -> DiffuseLight {
+    pub fn new(tex: Arc<texture::Texture>) -> DiffuseLight {
         DiffuseLight { emit_tex: tex }
     }
 }
@@ -176,13 +175,13 @@ impl DiffuseLight {
 impl MaterialTrait for DiffuseLight {
     fn scatter(
         &self,
-        r: &ray::Ray,
-        rec: &hittable::HitRecord,
+        _r: &ray::Ray,
+        _rec: &hittable::HitRecord,
     ) -> Option<(vector3::Color, ray::Ray)> {
         None
     }
 
     fn emit(&self, u: f64, v: f64, p: vector3::Point) -> vector3::Color {
-        self.emit_tex.lock().unwrap().value(u, v, p)
+        self.emit_tex.value(u, v, p)
     }
 }
