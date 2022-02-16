@@ -139,8 +139,8 @@ pub fn initialize_scene(x: i32) -> hittable::HittableList {
 pub fn lights() -> hittable::HittableList {
     let mut world = hittable::HittableList::new();
 
-    let image_tex = Arc::new(Mutex::new(texture::Texture::ImageTexture(
-        texture::ImageTexture::new("renders/book_1.png"),
+    let image_tex = Arc::new(Mutex::new(texture::Texture::SolidColor(
+        texture::SolidColor::new(5.0, 5.0, 5.0),
     )));
 
     let material = Arc::new(Mutex::new(material::Material::DiffuseLight(
