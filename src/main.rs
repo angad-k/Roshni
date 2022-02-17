@@ -50,31 +50,31 @@ fn main() {
     let now = Instant::now();
 
     // Image
-    let aspect_ratio: f64 = 16.0 / 9.0;
-    let image_width: u32 = 400;
+    let aspect_ratio: f64 = 1.0;
+    let image_width: u32 = 600;
     let image_height: u32 = u32(image_width as f64 / aspect_ratio).unwrap();
-    let samples_per_pixel = 100;
-    let max_depth: i32 = 50;
+    let samples_per_pixel = 200;
+    let max_depth: i32 = 200;
 
     // World
-    let mut world = initialize_scene(3);
-    let bvh_root = bvh::BVHNode::new(world.clone(), 0, world.objects.len() as i32, 0.0, 1.0);
-    world = hittable::HittableList::new();
-    world.add(hittable::HittableObj::BVHNode(bvh_root));
+    let mut world = cornell();
+    //let bvh_root = bvh::BVHNode::new(world.clone(), 0, world.objects.len() as i32, 0.0, 1.0);
+    //world = hittable::HittableList::new();
+    //world.add(hittable::HittableObj::BVHNode(bvh_root));
 
     // Camera
-    let lookfrom = vector3::Point::new(26.0, 3.0, 6.0);
-    let lookat = vector3::Point::new(0.0, 2.0, 0.0);
+    let lookfrom = vector3::Point::new(278.0, 278.0, -700.0);
+    let lookat = vector3::Point::new(278.0, 278.0, 0.0);
     let vup = vector3::Vec3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;
     let aperture = 0.1;
-    let bg_color = vector3::Color::new(0.0, 0.0, 0.0);
+    let bg_color = vector3::Color::new(0.5, 0.5, 0.5);
 
     let cam = camera::Camera::new(
         lookfrom,
         lookat,
         vup,
-        20.0,
+        40.0,
         aspect_ratio,
         aperture,
         dist_to_focus,
@@ -137,6 +137,76 @@ pub fn initialize_scene(x: i32) -> hittable::HittableList {
     }
 }
 
+pub fn cornell() -> hittable::HittableList {
+    let mut world = hittable::HittableList::new();
+
+    let red = Arc::new(material::Material::Metal(material::Metal::new(
+        vector3::Color::new(0.65, 0.05, 0.05),
+    )));
+    let green = Arc::new(material::Material::Lambertian(material::Lambertian::new(
+        vector3::Color::new(0.12, 0.45, 0.12),
+    )));
+    let white = Arc::new(material::Material::Lambertian(material::Lambertian::new(
+        vector3::Color::new(0.73, 0.73, 0.73),
+    )));
+    let light = Arc::new(material::Material::DiffuseLight(
+        material::DiffuseLight::new(Arc::new(texture::Texture::SolidColor(
+            texture::SolidColor::new(7.0, 7.0, 7.0),
+        ))),
+    ));
+
+    world.add(hittable::HittableObj::YZRect(aarect::YZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        green.clone(),
+    )));
+    world.add(hittable::HittableObj::YZRect(aarect::YZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        0.0,
+        red.clone(),
+    )));
+    world.add(hittable::HittableObj::XZRect(aarect::XZRect::new(
+        113.0,
+        443.0,
+        127.0,
+        432.0,
+        554.0,
+        light.clone(),
+    )));
+    world.add(hittable::HittableObj::XZRect(aarect::XZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        0.0,
+        white.clone(),
+    )));
+    world.add(hittable::HittableObj::XZRect(aarect::XZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    )));
+    world.add(hittable::HittableObj::XYRect(aarect::XYRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    )));
+
+    world
+}
+
 pub fn lights() -> hittable::HittableList {
     let mut world = hittable::HittableList::new();
 
@@ -162,7 +232,7 @@ pub fn lights() -> hittable::HittableList {
 
     let diff = Arc::new(material::Material::DiffuseLight(
         material::DiffuseLight::new(Arc::new(texture::Texture::SolidColor(
-            texture::SolidColor::new(5.0, 5.0, 5.0),
+            texture::SolidColor::new(10.0, 5.0, 5.0),
         ))),
     ));
 

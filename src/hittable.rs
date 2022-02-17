@@ -45,6 +45,8 @@ pub enum HittableObj {
     MovingSphere(moving_sphere::MovingSphere),
     BVHNode(bvh::BVHNode),
     XYRect(aarect::XYRect),
+    YZRect(aarect::YZRect),
+    XZRect(aarect::XZRect),
 }
 
 impl Hittable for HittableObj {
@@ -54,6 +56,8 @@ impl Hittable for HittableObj {
             HittableObj::MovingSphere(x) => x.hit(r, t_min, t_max),
             HittableObj::BVHNode(x) => x.hit(r, t_min, t_max),
             HittableObj::XYRect(x) => x.hit(r, t_min, t_max),
+            HittableObj::YZRect(x) => x.hit(r, t_min, t_max),
+            HittableObj::XZRect(x) => x.hit(r, t_min, t_max),
         }
     }
     fn bounding_box(&self, time_0: f64, time_1: f64) -> Option<aabb::AABB> {
@@ -62,6 +66,8 @@ impl Hittable for HittableObj {
             HittableObj::MovingSphere(x) => x.bounding_box(time_0, time_1),
             HittableObj::BVHNode(x) => x.bounding_box(time_0, time_1),
             HittableObj::XYRect(x) => x.bounding_box(time_0, time_1),
+            HittableObj::YZRect(x) => x.bounding_box(time_0, time_1),
+            HittableObj::XZRect(x) => x.bounding_box(time_0, time_1),
         }
     }
 }
