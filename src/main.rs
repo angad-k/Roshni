@@ -53,8 +53,8 @@ fn main() {
     let aspect_ratio: f64 = 1.0;
     let image_width: u32 = 600;
     let image_height: u32 = u32(image_width as f64 / aspect_ratio).unwrap();
-    let samples_per_pixel = 200;
-    let max_depth: i32 = 200;
+    let samples_per_pixel = 400;
+    let max_depth: i32 = 50;
 
     // World
     let mut world = cornell();
@@ -63,12 +63,12 @@ fn main() {
     //world.add(hittable::HittableObj::BVHNode(bvh_root));
 
     // Camera
-    let lookfrom = vector3::Point::new(278.0, 278.0, -700.0);
+    let lookfrom = vector3::Point::new(278.0, 278.0, -800.0);
     let lookat = vector3::Point::new(278.0, 278.0, 0.0);
     let vup = vector3::Vec3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;
     let aperture = 0.1;
-    let bg_color = vector3::Color::new(0.5, 0.5, 0.5);
+    let bg_color = vector3::Color::new(0.0, 0.0, 0.0);
 
     let cam = camera::Camera::new(
         lookfrom,
@@ -140,7 +140,7 @@ pub fn initialize_scene(x: i32) -> hittable::HittableList {
 pub fn cornell() -> hittable::HittableList {
     let mut world = hittable::HittableList::new();
 
-    let red = Arc::new(material::Material::Metal(material::Metal::new(
+    let red = Arc::new(material::Material::Lambertian(material::Lambertian::new(
         vector3::Color::new(0.65, 0.05, 0.05),
     )));
     let green = Arc::new(material::Material::Lambertian(material::Lambertian::new(

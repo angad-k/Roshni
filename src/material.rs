@@ -73,10 +73,14 @@ impl MaterialTrait for Lambertian {
         r: &ray::Ray,
         rec: &hittable::HitRecord,
     ) -> Option<(vector3::Color, ray::Ray)> {
-        let mut scatter_direction = rec.normal + vector3::Vec3::random_unit_vector();
+        let mut scatter_direction = vector3::Vec3::random_in_hemisphere(rec.normal);
         if scatter_direction.near_zero() {
             scatter_direction = rec.normal.clone();
         }
+        // println!(
+        //     "{}, {}, {}",
+        //     scatter_direction.x, scatter_direction.y, scatter_direction.z
+        // );
         // yeh sab jo change krke bhej rhe usse bhi hit record mei dalna mangtau
         let scattered = ray::Ray::new(rec.p, scatter_direction, Some(r.time));
         let attenuation = self.albedo.value(rec.u, rec.v, rec.p);
