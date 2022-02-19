@@ -1,16 +1,27 @@
 use crate::hittable;
 use crate::ray;
+use crate::texture;
+use crate::texture::TextureTrait;
 use crate::utils;
 use crate::vector3;
+use std::sync::Arc;
 
 pub trait MaterialTrait {
-    fn scatter(&self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray);
+    fn scatter(
+        &self,
+        r: &ray::Ray,
+        rec: &hittable::HitRecord,
+    ) -> Option<(vector3::Color, ray::Ray)>;
+    fn emit(&self, _u: f64, _v: f64, _p: vector3::Point) -> vector3::Color {
+        vector3::Color::new(0.0, 0.0, 0.0)
+    }
 }
 
 pub enum Material {
     Lambertian(Lambertian),
     Metal(Metal),
     Dielectric(Dielectric),
+    DiffuseLight(DiffuseLight),
 }
 
 impl MaterialTrait for Material {
@@ -18,21 +29,40 @@ impl MaterialTrait for Material {
         &self,
         _r: &ray::Ray,
         rec: &hittable::HitRecord,
-    ) -> (bool, vector3::Color, ray::Ray) {
+    ) -> Option<(vector3::Color, ray::Ray)> {
         match self {
             Material::Lambertian(x) => x.scatter(_r, rec),
             Material::Metal(x) => x.scatter(_r, rec),
             Material::Dielectric(x) => x.scatter(_r, rec),
+            Material::DiffuseLight(x) => x.scatter(_r, rec),
+        }
+    }
+
+    fn emit(&self, u: f64, v: f64, p: vector3::Point) -> vector3::Color {
+        match self {
+            Material::Lambertian(x) => x.emit(u, v, p),
+            Material::Metal(x) => x.emit(u, v, p),
+            Material::Dielectric(x) => x.emit(u, v, p),
+            Material::DiffuseLight(x) => x.emit(u, v, p),
         }
     }
 }
 
+//------------------------ LAMBERTIAN -------------------------------------------------------
+
 pub struct Lambertian {
-    albedo: vector3::Color,
+    albedo: Arc<texture::Texture>,
 }
 
 impl Lambertian {
     pub fn new(p_albedo: vector3::Color) -> Lambertian {
+        Lambertian {
+            albedo: Arc::new(texture::Texture::SolidColor(texture::SolidColor::new(
+                p_albedo.x, p_albedo.y, p_albedo.z,
+            ))),
+        }
+    }
+    pub fn new_from_texture(p_albedo: Arc<texture::Texture>) -> Lambertian {
         Lambertian { albedo: p_albedo }
     }
 }
@@ -40,19 +70,25 @@ impl Lambertian {
 impl MaterialTrait for Lambertian {
     fn scatter(
         &self,
-        _r: &ray::Ray,
+        r: &ray::Ray,
         rec: &hittable::HitRecord,
-    ) -> (bool, vector3::Color, ray::Ray) {
-        let mut scatter_direction = rec.normal + vector3::Vec3::random_unit_vector();
+    ) -> Option<(vector3::Color, ray::Ray)> {
+        let mut scatter_direction = vector3::Vec3::random_in_hemisphere(rec.normal);
         if scatter_direction.near_zero() {
             scatter_direction = rec.normal.clone();
         }
+        // println!(
+        //     "{}, {}, {}",
+        //     scatter_direction.x, scatter_direction.y, scatter_direction.z
+        // );
         // yeh sab jo change krke bhej rhe usse bhi hit record mei dalna mangtau
-        let scattered = ray::Ray::new(rec.p, scatter_direction);
-        let attenuation = self.albedo.clone();
-        (true, attenuation, scattered)
+        let scattered = ray::Ray::new(rec.p, scatter_direction, Some(r.time));
+        let attenuation = self.albedo.value(rec.u, rec.v, rec.p);
+        Some((attenuation, scattered))
     }
 }
+
+//------------------------ METAL -------------------------------------------------------
 
 pub struct Metal {
     albedo: vector3::Color,
@@ -65,17 +101,19 @@ impl Metal {
 }
 
 impl MaterialTrait for Metal {
-    fn scatter(&self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray) {
+    fn scatter(
+        &self,
+        r: &ray::Ray,
+        rec: &hittable::HitRecord,
+    ) -> Option<(vector3::Color, ray::Ray)> {
         let reflected = vector3::reflect(r.dir.unit_vector(), rec.normal);
-        let scattered = ray::Ray::new(rec.p, reflected);
+        let scattered = ray::Ray::new(rec.p, reflected, Some(r.time));
         let attenuation = self.albedo.clone();
-        (
-            (vector3::dot(scattered.dir, rec.normal) > 0.0),
-            attenuation,
-            scattered,
-        )
+        Some((attenuation, scattered))
     }
 }
+
+//------------------------ DIELECTRIC -------------------------------------------------------
 
 pub struct Dielectric {
     ir: f64,
@@ -94,7 +132,11 @@ impl Dielectric {
 }
 
 impl MaterialTrait for Dielectric {
-    fn scatter(&self, r: &ray::Ray, rec: &hittable::HitRecord) -> (bool, vector3::Color, ray::Ray) {
+    fn scatter(
+        &self,
+        r: &ray::Ray,
+        rec: &hittable::HitRecord,
+    ) -> Option<(vector3::Color, ray::Ray)> {
         let attenuation = vector3::Color::new(1.0, 1.0, 1.0);
         let mut refraction_ratio = 1.0 / self.ir;
         if !rec.front_face {
@@ -117,7 +159,33 @@ impl MaterialTrait for Dielectric {
             direction = vector3::refract(unit_direction, rec.normal, refraction_ratio);
         }
 
-        let scattered = ray::Ray::new(rec.p, direction);
-        (true, attenuation, scattered)
+        let scattered = ray::Ray::new(rec.p, direction, Some(r.time));
+        Some((attenuation, scattered))
+    }
+}
+
+//------------------------ DIFFUSE LIGHT -------------------------------------------------------
+
+pub struct DiffuseLight {
+    emit_tex: Arc<texture::Texture>,
+}
+
+impl DiffuseLight {
+    pub fn new(tex: Arc<texture::Texture>) -> DiffuseLight {
+        DiffuseLight { emit_tex: tex }
+    }
+}
+
+impl MaterialTrait for DiffuseLight {
+    fn scatter(
+        &self,
+        _r: &ray::Ray,
+        _rec: &hittable::HitRecord,
+    ) -> Option<(vector3::Color, ray::Ray)> {
+        None
+    }
+
+    fn emit(&self, u: f64, v: f64, p: vector3::Point) -> vector3::Color {
+        self.emit_tex.value(u, v, p)
     }
 }

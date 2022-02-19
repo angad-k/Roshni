@@ -10,3 +10,8 @@ pub fn write_image(path: &str, width: u32, height: u32, data: &[u8]) {
         .encode(data, width, height, ColorType::RGB(8))
         .unwrap();
 }
+
+pub fn read_image(path: &str) -> image::DynamicImage {
+    let img = image::open(path).unwrap();
+    img
+}

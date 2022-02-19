@@ -1,4 +1,5 @@
 use crate::ray;
+use crate::utils;
 use crate::vector3;
 pub struct Camera {
     origin: vector3::Point,
@@ -7,8 +8,10 @@ pub struct Camera {
     vertical: vector3::Vec3,
     u: vector3::Vec3,
     v: vector3::Vec3,
-    w: vector3::Vec3,
+    _w: vector3::Vec3,
     lens_radius: f64,
+    time_0: f64,
+    time_1: f64,
 }
 
 impl Camera {
@@ -20,6 +23,8 @@ impl Camera {
         aspect_ratio: f64,
         aperture: f64,
         focus_dist: f64,
+        time_0: f64,
+        time_1: f64,
     ) -> Camera {
         let theta = vfov.to_radians();
         let h = (theta / 2.0).tan();
@@ -39,8 +44,10 @@ impl Camera {
             lower_left_corner: lookfrom - horizontal / 2.0 - vertical / 2.0 - w * focus_dist,
             u: u,
             v: v,
-            w: w,
+            _w: w,
             lens_radius: aperture / 2.0,
+            time_0: time_0,
+            time_1: time_1,
         }
     }
 
@@ -51,6 +58,7 @@ impl Camera {
         return ray::Ray::new(
             self.origin + offset,
             self.lower_left_corner + self.horizontal * x + self.vertical * t - self.origin - offset,
+            Some(utils::random_double(self.time_0, self.time_1)),
         );
     }
 }
